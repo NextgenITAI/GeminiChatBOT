@@ -3,7 +3,6 @@ const leadForm = document.getElementById("lead-form-submit");
 const chatWindow = document.getElementById("chat-window");
 const chatBox = document.getElementById("chat-box");
 const submitLeadBtn = document.getElementById("submit-lead");
-const thankyouMsg = document.getElementById("thankyou-msg");
 const nameInput = document.getElementById("name");
 const emailInput = document.getElementById("email");
 const phoneInput = document.getElementById("phone");
@@ -30,12 +29,8 @@ leadForm.addEventListener("submit", (e) => {
   };
 
   leadForm.classList.add("hidden");
-  thankyouMsg.classList.remove("hidden");
-  setTimeout(() => {
-    thankyouMsg.classList.add("hidden");
-    chatWindow.classList.remove("hidden");
-    appendMessage("Hello! How can I assist you today?");
-  }, 2000); // Show thank you message for 2 seconds before showing chat
+  chatWindow.classList.remove("hidden");
+  appendMessage("Hello! How can I assist you today?");
 });
 
 // Send message
