@@ -1,40 +1,36 @@
-document.addEventListener("DOMContentLoaded", function() {
-  const submitBtn = document.getElementById("submit-lead");
-  const thankYouMsg = document.getElementById("thankyou-msg");
+document.addEventListener("DOMContentLoaded", () => {
   const leadForm = document.getElementById("lead-form");
   const chatWindow = document.getElementById("chat-window");
+  const thankYouMsg = document.getElementById("thankyou-msg");
+  const submitBtn = document.getElementById("submit-lead");
+  const sendBtn = document.getElementById("send-btn");
+  const messages = document.getElementById("messages");
+  const input = document.getElementById("user-input");
 
-  submitBtn.addEventListener("click", function() {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-
-    if(name && email && phone){
-      // For now, just show thank you message
-      thankYouMsg.classList.remove("hidden");
-      leadForm.classList.add("hidden");
-      chatWindow.classList.remove("hidden");
-
-      // Later: send POST request to Python backend
-    } else {
-      alert("Please fill all fields!");
+  submitBtn.addEventListener("click", () => {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    if (!name || !email || !phone) {
+      alert("Please fill all fields");
+      return;
     }
+    thankYouMsg.classList.remove("hidden");
+    leadForm.classList.add("hidden");
+    chatWindow.classList.remove("hidden");
+    // TODO: POST lead to backend
   });
 
-  const sendBtn = document.getElementById("send-btn");
-  sendBtn.addEventListener("click", function() {
-    const userInput = document.getElementById("user-input").value;
-    if(userInput){
-      const messages = document.getElementById("messages");
-      const msg = document.createElement("div");
-      msg.textContent = "You: " + userInput;
-      messages.appendChild(msg);
-      document.getElementById("user-input").value = "";
-
-      // Later: call backend RAG + LLM for answer
-      const botMsg = document.createElement("div");
-      botMsg.textContent = "Bot: This will be replaced by LLM answer";
-      messages.appendChild(botMsg);
-    }
+  sendBtn.addEventListener("click", () => {
+    const text = input.value.trim();
+    if (!text) return;
+    const userMsg = document.createElement("div");
+    userMsg.textContent = `You: ${text}`;
+    messages.appendChild(userMsg);
+    input.value = "";
+    const botMsg = document.createElement("div");
+    botMsg.textContent = "Bot: [response will appear here]";
+    messages.appendChild(botMsg);
+    messages.scrollTop = messages.scrollHeight;
   });
 });
