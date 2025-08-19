@@ -48,18 +48,22 @@ body {
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 0.95rem;
+  background: #fff;
+  border-radius: 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .form-container button {
   width: 100%;
   padding: 12px;
   border: none;
-  border-radius: 6px;
+  border-radius: 25px;
   background-color: #0d6efd;
   color: white;
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .form-container button:hover {
@@ -130,6 +134,8 @@ body {
   padding: 10px;
   border: none;
   font-size: 0.95rem;
+  border-radius: 25px 0 0 25px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .chat-input button {
@@ -139,6 +145,8 @@ body {
   color: white;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  border-radius: 0 25px 25px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .chat-input button:hover {
