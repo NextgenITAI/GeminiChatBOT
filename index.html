@@ -1,38 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NextGenIT ChatBOT</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="widget.js"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NextGenIT Leads</title>
+  <link rel="stylesheet" href="static/style.css">
+  <script defer src="static/widget.js"></script>
 </head>
 <body>
   <div id="chat-root">
     <div class="chat-container">
-
-      <div class="header">NextGenIT Chat</div>
+      <div class="header">Welcome to NextGenIT</div>
 
       <!-- Lead Form -->
-      <div id="lead-form" class="form-container">
-        <label>Name</label>
-        <input id="name" type="text" placeholder="Name">
-        <label>Email</label>
-        <input id="email" type="email" placeholder="Email">
-        <label>Phone</label>
-        <input id="phone" type="text" placeholder="Phone">
-        <button id="submit-lead">Submit</button>
-        <p id="thankyou-msg" class="hidden">Thank you! We will contact you soon.</p>
+      <div class="form-container" id="lead-form">
+        <form>
+          <input type="text" id="name" placeholder="Your Name" required />
+          <input type="email" id="email" placeholder="Email" required />
+          <input type="tel" id="phone" placeholder="Phone" required />
+          <button type="submit" id="submit-lead">Submit</button>
+          <div id="thankyou-msg" class="hidden banner"></div>
+        </form>
       </div>
 
       <!-- Chat Window -->
-      <div id="chat-window" class="chat hidden">
-        <div id="messages"></div>
+      <div class="chat-section hidden" id="chat-window">
+        <div id="chat-box" class="chat-box"></div>
         <div class="chat-input">
-          <input id="user-input" type="text" placeholder="Ask a question...">
-          <button id="send-btn">Send</button>
+          <input id="msg" placeholder="Ask me anything..." />
+          <button id="send">Send</button>
         </div>
       </div>
-
     </div>
   </div>
 </body>
