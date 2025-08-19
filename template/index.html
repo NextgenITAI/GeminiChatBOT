@@ -7,24 +7,19 @@
   <script defer src="widget.js"></script>
 </head>
 <body>
-  <!-- Chat & Lead Form Container -->
   <div id="chat-root">
     <div class="chat-container">
 
-      <!-- Header -->
       <div class="header">NextGenIT Chat</div>
 
       <!-- Lead Form -->
       <div id="lead-form" class="form-container">
-        <label for="name">Name</label>
+        <label>Name</label>
         <input id="name" type="text" placeholder="Name">
-
-        <label for="email">Email</label>
+        <label>Email</label>
         <input id="email" type="email" placeholder="Email">
-
-        <label for="phone">Phone</label>
+        <label>Phone</label>
         <input id="phone" type="text" placeholder="Phone">
-
         <button id="submit-lead">Submit</button>
         <p id="thankyou-msg" class="hidden">Thank you! We will contact you soon.</p>
       </div>
@@ -32,8 +27,10 @@
       <!-- Chat Window -->
       <div id="chat-window" class="chat hidden">
         <div id="messages"></div>
-        <input id="user-input" type="text" placeholder="Ask us anything...">
-        <button id="send-btn">Send</button>
+        <div class="chat-input">
+          <input id="user-input" type="text" placeholder="Ask a question...">
+          <button id="send-btn">Send</button>
+        </div>
       </div>
 
     </div>
