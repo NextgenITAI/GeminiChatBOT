@@ -29,4 +29,8 @@ leadForm.addEventListener("submit", async (e) => {
     phone: phoneInput.value
   };
 
+  leadForm.classList.add("hidden");          // hide lead form
+chatWindow.classList.remove("hidden");     // show chat window
+
+
   //
