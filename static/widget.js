@@ -1,5 +1,5 @@
 // Grab elements
-const leadForm = document.getElementById("lead-form");
+const leadForm = document.getElementById("lead-form-submit");
 const chatWindow = document.getElementById("chat-window");
 const chatBox = document.getElementById("chat-box");
 const submitLeadBtn = document.getElementById("submit-lead");
@@ -20,7 +20,7 @@ function appendMessage(text, sender = "bot") {
 }
 
 // Lead form submission
-leadForm.addEventListener("submit", async (e) => {
+leadForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
   const lead = {
@@ -29,8 +29,21 @@ leadForm.addEventListener("submit", async (e) => {
     phone: phoneInput.value
   };
 
-  leadForm.classList.add("hidden");          // hide lead form
-chatWindow.classList.remove("hidden");     // show chat window
+  leadForm.classList.add("hidden");
+  thankyouMsg.classList.remove("hidden");
+  setTimeout(() => {
+    thankyouMsg.classList.add("hidden");
+    chatWindow.classList.remove("hidden");
+    appendMessage("Hello! How can I assist you today?");
+  }, 2000); // Show thank you message for 2 seconds before showing chat
+});
 
-
-  //
+// Send message
+sendBtn.addEventListener("click", () => {
+  const message = msgInput.value.trim();
+  if (message) {
+    appendMessage(message, "user");
+    msgInput.value = "";
+    setTimeout(() => appendMessage("This is a sample bot response."), 500);
+  }
+});
