@@ -1,36 +1,32 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const leadForm = document.getElementById("lead-form");
-  const chatWindow = document.getElementById("chat-window");
-  const thankYouMsg = document.getElementById("thankyou-msg");
-  const submitBtn = document.getElementById("submit-lead");
-  const sendBtn = document.getElementById("send-btn");
-  const messages = document.getElementById("messages");
-  const input = document.getElementById("user-input");
+// Grab elements
+const leadForm = document.getElementById("lead-form");
+const chatWindow = document.getElementById("chat-window");
+const chatBox = document.getElementById("chat-box");
+const submitLeadBtn = document.getElementById("submit-lead");
+const thankyouMsg = document.getElementById("thankyou-msg");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
 
-  submitBtn.addEventListener("click", () => {
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    if (!name || !email || !phone) {
-      alert("Please fill all fields");
-      return;
-    }
-    thankYouMsg.classList.remove("hidden");
-    leadForm.classList.add("hidden");
-    chatWindow.classList.remove("hidden");
-    // TODO: POST lead to backend
-  });
+// Append message to chat
+function appendMessage(text, sender = "bot") {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("chat-message", sender);
+  msgDiv.textContent = text;
+  chatBox.appendChild(msgDiv);
+  chatBox.scrollTop = chatBox.scrollHeight; // auto scroll
+}
 
-  sendBtn.addEventListener("click", () => {
-    const text = input.value.trim();
-    if (!text) return;
-    const userMsg = document.createElement("div");
-    userMsg.textContent = `You: ${text}`;
-    messages.appendChild(userMsg);
-    input.value = "";
-    const botMsg = document.createElement("div");
-    botMsg.textContent = "Bot: [response will appear here]";
-    messages.appendChild(botMsg);
-    messages.scrollTop = messages.scrollHeight;
-  });
-});
+// Lead form submission
+leadForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const lead = {
+    name: nameInput.value,
+    email: emailInput.value,
+    phone: phoneInput.value
+  };
+
+  //
