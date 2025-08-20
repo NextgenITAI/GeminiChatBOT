@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Welcome to NextGenIT</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NextGenIT Leads</title>
+  <link rel="stylesheet" href="static/style.css">
+  <script defer src="static/widget.js"></script>
 </head>
 <body>
-  <div id="chat-root">
-    <div class="chat-container">
-      <div class="header">Welcome to NextGenIT</div>
-      <div id="lead-form" class="form-container">
-        <form id="lead-form-submit">
-          <input type="text" id="name" placeholder="Your Name" required>
-          <input type="email" id="email" placeholder="Email" required>
-          <input type="tel" id="phone" placeholder="Phone" required>
-          <button type="submit" id="submit-lead">Submit</button>
-        </form>
-      </div>
-      <div id="chat-window" class="chat-section hidden">
-        <div id="chat-box" class="chat-box"></div>
-        <div class="chat-input">
-          <input type="text" id="msg" placeholder="Ask me anything...">
-          <button id="send">Send</button>
-        </div>
+<div id="chat-root">
+  <div class="chat-container">
+    <div class="header">Welcome to NextGenIT</div>
+    <div class="form-container" id="lead-form">
+      <form>
+        <input type="text" id="name" placeholder="Your Name" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="tel" id="phone" placeholder="Phone" required />
+        <button type="submit" id="submit-lead">Submit</button>
+        <div id="thankyou-msg" class="hidden banner"></div>
+      </form>
+    </div>
+    <div class="chat-section hidden" id="chat-window">
+      <div id="chat-box" class="chat-box"></div>
+      <div class="chat-input">
+        <input id="msg" placeholder="Ask me anything..." />
+        <button id="send">Send</button>
       </div>
     </div>
   </div>
-  <script src="widget.js"></script>
+</div>
 </body>
 </html>
