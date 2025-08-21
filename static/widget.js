@@ -30,4 +30,50 @@ function appendMessage(text, sender = "bot") {
 // -------------------------------
 // Lead form submission
 // -------------------------------
-leadForm.addEventListener("submit", a
+leadForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const lead = {
+    name: nameInput.value,
+    email: emailInput.value,
+    phone: phoneInput.value
+  };
+
+  try {
+    const response = await fetch(`${NGROK_URL}/submit_lead`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lead)
+    });
+
+    const result = await response.json();
+    if (result.status === "success") {
+      // Hide lead form, show thank you message
+      leadForm.classList.add("hidden");
+      thankyouMsg.classList.remove("hidden");
+
+      setTimeout(() => {
+        thankyouMsg.classList.add("hidden");
+        chatWindow.classList.remove("hidden");
+      }, 2000);
+    } else {
+      alert("Error saving lead: " + result.message);
+    }
+  } catch (err) {
+    alert("Failed to submit lead: " + err.message);
+  }
+});
+
+// -------------------------------
+// Sending chat messages
+// -------------------------------
+sendBtn.addEventListener("click", () => {
+  const message = msgInput.value.trim();
+  if (!message) return;
+
+  appendMessage(message, "user");
+  msgInput.value = "";
+
+  // Placeholder bot response
+  appendMessage("Bot is thinking...", "bot");
+});
