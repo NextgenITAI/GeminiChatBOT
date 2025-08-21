@@ -1,71 +1,70 @@
-// Submit lead
-document.getElementById('submit-lead').onclick = async (event) => {
-  event.preventDefault(); // Prevent default form submission
-  console.log('Submit button clicked'); // Debug log
+// Grab elements
+const leadForm = document.getElementById("lead-form");
+const chatWindow = document.getElementById("chat-window");
+const chatBox = document.getElementById("chat-box");
+const submitLeadBtn = document.getElementById("submit-lead");
+const thankyouMsg = document.getElementById("thankyou-msg");
+const nameInput = document.getElementById("name");
+const emailInput = document.getElementById("email");
+const phoneInput = document.getElementById("phone");
+const msgInput = document.getElementById("msg");
+const sendBtn = document.getElementById("send");
 
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const phone = document.getElementById('phone').value.trim();
+// Append message to chat
+function appendMessage(text, sender = "bot") {
+  const msgDiv = document.createElement("div");
+  msgDiv.classList.add("chat-message", sender);
+  msgDiv.textContent = text;
+  chatBox.appendChild(msgDiv);
+  chatBox.scrollTop = chatBox.scrollHeight; // auto scroll
+}
 
-  if (!name || !email || !phone) {
-    alert('Please fill all fields');
-    return;
-  }
+// Lead form submission
+leadForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const lead = {
+    name: nameInput.value,
+    email: emailInput.value,
+    phone: phoneInput.value
+  };
 
   try {
-    console.log('Sending fetch request to /submit-lead'); // Debug log
-    const res = await fetch('/submit-lead', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone })
+    // Submit lead to Flask/ngrok
+    const response = await fetch("https://f8a22bf21142.ngrok-free.app/submit_lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lead)
     });
-    const data = await res.json();
-    console.log('Response received:', data); // Debug log
 
-    if (res.ok) {
-      // Show thank-you message
-      const thankyouMsg = document.getElementById('thankyou-msg');
-      thankyouMsg.textContent = data.message;
-      thankyouMsg.classList.remove('hidden');
-      console.log('Thank-you message displayed'); // Debug log
+    const result = await response.json();
+    if (result.status === "success") {
+      // Hide lead form, show thank-you message
+      leadForm.classList.add("hidden");
+      thankyouMsg.classList.remove("hidden");
 
-      // Smooth transition to chat
+      // Wait 2 seconds, then show chat window
       setTimeout(() => {
-        const leadForm = document.getElementById('lead-form');
-        const chatWindow = document.getElementById('chat-window');
-        leadForm.classList.add('fade-out');
-        setTimeout(() => {
-          leadForm.classList.add('hidden');
-          leadForm.classList.remove('fade-out');
-          chatWindow.classList.remove('hidden');
-          chatWindow.classList.add('fade-in');
-          setTimeout(() => chatWindow.classList.remove('fade-in'), 500); // Match CSS transition
-          console.log('Transition to chat window completed'); // Debug log
-        }, 500); // Match CSS transition duration
-      }, 2000); // 2-second delay for thank-you message
+        thankyouMsg.classList.add("hidden");
+        chatWindow.classList.remove("hidden");
+      }, 2000);
+
     } else {
-      alert('Error: ' + data.message);
+      alert("Error saving lead: " + result.message);
     }
-  } catch (error) {
-    console.error('Fetch error:', error);
-    alert('Failed to submit lead. Check console for details.');
+  } catch (err) {
+    alert("Failed to submit lead: " + err.message);
   }
-};
+});
 
-// Chat send button
-document.getElementById('send').onclick = () => {
-  const msgInput = document.getElementById('msg');
-  const msg = msgInput.value.trim();
-  if (!msg) return;
+// Sending chat messages
+sendBtn.addEventListener("click", () => {
+  const message = msgInput.value.trim();
+  if (!message) return;
 
-  const chatBox = document.getElementById('chat-box');
-  chatBox.innerHTML += `<div class="msg me">${msg}</div>`;
-  chatBox.scrollTop = chatBox.scrollHeight;
-  msgInput.value = '';
+  appendMessage(message, "user");
+  msgInput.value = "";
 
-  // Bot response placeholder
-  setTimeout(() => {
-    chatBox.innerHTML += `<div class="msg bot">I am ready to answer your questions!</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-  }, 500);
-};
+  // Here you can add code to call your chatbot API and append bot responses
+  appendMessage("Bot is thinking...", "bot");
+});
