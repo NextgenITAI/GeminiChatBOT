@@ -1,4 +1,6 @@
+// -------------------------------
 // Grab elements
+// -------------------------------
 const leadForm = document.getElementById("lead-form");
 const chatWindow = document.getElementById("chat-window");
 const chatBox = document.getElementById("chat-box");
@@ -9,12 +11,14 @@ const phoneInput = document.getElementById("phone");
 const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("send");
 
-// Detect ngrok URL or use local
-const isNgrokActive = window.location.href.includes("ngrok-free.app");
-const FLASK_URL = isNgrokActive ? "https://f8a22bf21142.ngrok-free.app" : "http://127.0.0.1:8000";
-console.log("Using FLASK_URL:", FLASK_URL);
+// -------------------------------
+// Local Flask endpoint
+// -------------------------------
+const FLASK_URL = "http://127.0.0.1:8000";
 
+// -------------------------------
 // Append message to chat
+// -------------------------------
 function appendMessage(text, sender = "bot") {
   const msgDiv = document.createElement("div");
   msgDiv.classList.add("chat-message", sender);
@@ -23,7 +27,9 @@ function appendMessage(text, sender = "bot") {
   chatBox.scrollTop = chatBox.scrollHeight; // auto scroll
 }
 
+// -------------------------------
 // Preflight / CORS helper
+// -------------------------------
 async function preflightCheck(url, method) {
   try {
     const response = await fetch(url, {
@@ -38,7 +44,9 @@ async function preflightCheck(url, method) {
   }
 }
 
+// -------------------------------
 // Lead form submission
+// -------------------------------
 leadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -82,7 +90,9 @@ leadForm.addEventListener("submit", async (e) => {
   }
 });
 
+// -------------------------------
 // Chat message sending
+// -------------------------------
 sendBtn.addEventListener("click", async () => {
   const message = msgInput.value.trim();
   if (!message) {
@@ -136,7 +146,9 @@ sendBtn.addEventListener("click", async () => {
   }
 });
 
+// -------------------------------
 // Press Enter to send
+// -------------------------------
 msgInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendBtn.click();
 });
