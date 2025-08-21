@@ -28,16 +28,40 @@ function appendMessage(text, sender = "bot") {
 }
 
 // -------------------------------
+// Preflight / CORS helper
+// -------------------------------
+async function preflightCheck(url, method) {
+  try {
+    const response = await fetch(url, {
+      method: "OPTIONS",
+      headers: { "Content-Type": "application/json" }
+    });
+    if (!response.ok) {
+      console.warn(`Preflight check failed for ${method} ${url}`);
+    }
+  } catch (err) {
+    console.error(`Preflight request failed for ${method} ${url}:`, err);
+  }
+}
+
+// -------------------------------
 // Lead form submission
 // -------------------------------
 leadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const lead = {
-    name: nameInput.value,
-    email: emailInput.value,
-    phone: phoneInput.value
+    name: nameInput.value.trim(),
+    email: emailInput.value.trim(),
+    phone: phoneInput.value.trim()
   };
+
+  if (!lead.name || !lead.email || !lead.phone) {
+    alert("Please fill in all lead fields.");
+    return;
+  }
+
+  await preflightCheck(`${FLASK_URL}/submit_lead`, "POST");
 
   try {
     const response = await fetch(`${FLASK_URL}/submit_lead`, {
@@ -47,6 +71,7 @@ leadForm.addEventListener("submit", async (e) => {
     });
 
     const result = await response.json();
+
     if (result.status === "success") {
       leadForm.classList.add("hidden");
       thankyouMsg.classList.remove("hidden");
@@ -56,6 +81,7 @@ leadForm.addEventListener("submit", async (e) => {
         chatWindow.classList.remove("hidden");
       }, 2000);
     } else {
+      console.error("Lead save error:", result);
       alert("Error saving lead: " + result.message);
     }
   } catch (err) {
@@ -69,12 +95,16 @@ leadForm.addEventListener("submit", async (e) => {
 // -------------------------------
 sendBtn.addEventListener("click", async () => {
   const message = msgInput.value.trim();
-  if (!message) return;
+  if (!message) {
+    alert("Please type a message before sending.");
+    return;
+  }
 
   appendMessage(message, "user");
   msgInput.value = "";
-
   appendMessage("Bot is thinking...", "bot");
+
+  await preflightCheck(`${FLASK_URL}/chat`, "POST");
 
   try {
     const response = await fetch(`${FLASK_URL}/chat`, {
@@ -83,17 +113,42 @@ sendBtn.addEventListener("click", async () => {
       body: JSON.stringify({ message })
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+
     const data = await response.json();
+
+    // Remove "Bot is thinking..."
+    const lastBotMsg = chatBox.querySelector(".chat-message.bot:last-child");
+    if (lastBotMsg && lastBotMsg.textContent === "Bot is thinking...") {
+      lastBotMsg.remove();
+    }
 
     if (data.status === "error") {
       appendMessage("Error: " + data.message, "bot");
+      console.error("Bot error:", data.message);
     } else if (data.docs) {
-      // Combine top documents for bot reply
-      const reply = data.docs.join("\n\n");
-      appendMessage(reply, "bot");
+      const formattedReply = data.docs.map(d => {
+        return d
+          .replace(/Email:\s*(\S+)/i, "✉️ Email: $1")
+          .replace(/Mob(?:ile)?:\s*(\S+)/i, "📞 Mobile: $1");
+      }).join("\n\n");
+      appendMessage(formattedReply, "bot");
+      console.info("Bot reply:", formattedReply);
+    } else {
+      appendMessage("Bot did not return any data.", "bot");
+      console.warn("No docs returned from bot for message:", message);
     }
   } catch (err) {
     console.error("Chat failed:", err);
     appendMessage("Failed to get response from bot.", "bot");
   }
+});
+
+// -------------------------------
+// Press Enter to send
+// -------------------------------
+msgInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") sendBtn.click();
 });
