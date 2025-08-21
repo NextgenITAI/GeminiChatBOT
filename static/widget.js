@@ -17,6 +17,25 @@ const sendBtn = document.getElementById("send");
 const FLASK_URL = "http://127.0.0.1:8000";
 
 // -------------------------------
+// Helper: fade element in/out
+// -------------------------------
+function fadeOut(element, duration = 500) {
+  element.style.transition = `opacity ${duration}ms`;
+  element.style.opacity = 0;
+  return new Promise(resolve => setTimeout(() => {
+    element.style.display = "none";
+    resolve();
+  }, duration));
+}
+
+function fadeIn(element, duration = 500, display = "block") {
+  element.style.display = display;
+  element.style.opacity = 0;
+  element.style.transition = `opacity ${duration}ms`;
+  setTimeout(() => element.style.opacity = 1, 10);
+}
+
+// -------------------------------
 // Append message to chat
 // -------------------------------
 function appendMessage(text, sender = "bot") {
@@ -28,40 +47,16 @@ function appendMessage(text, sender = "bot") {
 }
 
 // -------------------------------
-// Preflight / CORS helper
-// -------------------------------
-async function preflightCheck(url, method) {
-  try {
-    const response = await fetch(url, {
-      method: "OPTIONS",
-      headers: { "Content-Type": "application/json" }
-    });
-    if (!response.ok) {
-      console.warn(`Preflight check failed for ${method} ${url}`);
-    }
-  } catch (err) {
-    console.error(`Preflight request failed for ${method} ${url}:`, err);
-  }
-}
-
-// -------------------------------
 // Lead form submission
 // -------------------------------
 leadForm.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const lead = {
-    name: nameInput.value.trim(),
-    email: emailInput.value.trim(),
-    phone: phoneInput.value.trim()
+    name: nameInput.value,
+    email: emailInput.value,
+    phone: phoneInput.value
   };
-
-  if (!lead.name || !lead.email || !lead.phone) {
-    alert("Please fill in all lead fields.");
-    return;
-  }
-
-  await preflightCheck(`${FLASK_URL}/submit_lead`, "POST");
 
   try {
     const response = await fetch(`${FLASK_URL}/submit_lead`, {
@@ -73,15 +68,14 @@ leadForm.addEventListener("submit", async (e) => {
     const result = await response.json();
 
     if (result.status === "success") {
-      leadForm.classList.add("hidden");
-      thankyouMsg.classList.remove("hidden");
-
-      setTimeout(() => {
-        thankyouMsg.classList.add("hidden");
-        chatWindow.classList.remove("hidden");
-      }, 2000);
+      await fadeOut(leadForm, 500);
+      fadeIn(thankyouMsg, 500);
+      setTimeout(async () => {
+        await fadeOut(thankyouMsg, 500);
+        fadeIn(chatWindow, 500);
+        appendMessage("Hello! How can I help you today?", "bot");
+      }, 1500);
     } else {
-      console.error("Lead save error:", result);
       alert("Error saving lead: " + result.message);
     }
   } catch (err) {
@@ -93,18 +87,19 @@ leadForm.addEventListener("submit", async (e) => {
 // -------------------------------
 // Chat message sending
 // -------------------------------
-sendBtn.addEventListener("click", async () => {
+async function sendMessage() {
   const message = msgInput.value.trim();
-  if (!message) {
-    alert("Please type a message before sending.");
-    return;
-  }
+  if (!message) return;
 
   appendMessage(message, "user");
   msgInput.value = "";
-  appendMessage("Bot is thinking...", "bot");
 
-  await preflightCheck(`${FLASK_URL}/chat`, "POST");
+  // Typing indicator
+  const typing = document.createElement("div");
+  typing.classList.add("chat-message", "bot");
+  typing.textContent = "Bot is typing...";
+  chatBox.appendChild(typing);
+  chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
     const response = await fetch(`${FLASK_URL}/chat`, {
@@ -113,42 +108,33 @@ sendBtn.addEventListener("click", async () => {
       body: JSON.stringify({ message })
     });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-
     const data = await response.json();
+    typing.remove();
 
-    // Remove "Bot is thinking..."
-    const lastBotMsg = chatBox.querySelector(".chat-message.bot:last-child");
-    if (lastBotMsg && lastBotMsg.textContent === "Bot is thinking...") {
-      lastBotMsg.remove();
-    }
-
-    if (data.status === "error") {
-      appendMessage("Error: " + data.message, "bot");
-      console.error("Bot error:", data.message);
-    } else if (data.docs) {
+    if (data && data.docs && data.docs.length > 0) {
       const formattedReply = data.docs.map(d => {
         return d
           .replace(/Email:\s*(\S+)/i, "✉️ Email: $1")
           .replace(/Mob(?:ile)?:\s*(\S+)/i, "📞 Mobile: $1");
       }).join("\n\n");
       appendMessage(formattedReply, "bot");
-      console.info("Bot reply:", formattedReply);
     } else {
       appendMessage("Bot did not return any data.", "bot");
-      console.warn("No docs returned from bot for message:", message);
     }
   } catch (err) {
     console.error("Chat failed:", err);
+    typing.remove();
     appendMessage("Failed to get response from bot.", "bot");
   }
-});
+}
 
 // -------------------------------
-// Press Enter to send
+// Send button & Enter key
 // -------------------------------
-msgInput.addEventListener("keypress", (e) => {
-  if (e.key === "Enter") sendBtn.click();
+sendBtn.addEventListener("click", sendMessage);
+msgInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
 });
