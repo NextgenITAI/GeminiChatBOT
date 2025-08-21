@@ -12,9 +12,9 @@ const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("send");
 
 // -------------------------------
-// Ngrok endpoint
+// Local Flask endpoint
 // -------------------------------
-const NGROK_URL = "https://f8a22bf21142.ngrok-free.app";
+const FLASK_URL = "http://127.0.0.1:8000";
 
 // -------------------------------
 // Append message to chat
@@ -40,7 +40,7 @@ leadForm.addEventListener("submit", async (e) => {
   };
 
   try {
-    const response = await fetch(`${NGROK_URL}/submit_lead`, {
+    const response = await fetch(`${FLASK_URL}/submit_lead`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(lead)
@@ -48,7 +48,6 @@ leadForm.addEventListener("submit", async (e) => {
 
     const result = await response.json();
     if (result.status === "success") {
-      // Hide lead form, show thank you message
       leadForm.classList.add("hidden");
       thankyouMsg.classList.remove("hidden");
 
@@ -60,20 +59,41 @@ leadForm.addEventListener("submit", async (e) => {
       alert("Error saving lead: " + result.message);
     }
   } catch (err) {
-    alert("Failed to submit lead: " + err.message);
+    console.error("Lead submission failed:", err);
+    alert("Failed to submit lead. Check console for details.");
   }
 });
 
 // -------------------------------
-// Sending chat messages
+// Chat message sending
 // -------------------------------
-sendBtn.addEventListener("click", () => {
+sendBtn.addEventListener("click", async () => {
   const message = msgInput.value.trim();
   if (!message) return;
 
   appendMessage(message, "user");
   msgInput.value = "";
 
-  // Placeholder bot response
   appendMessage("Bot is thinking...", "bot");
+
+  try {
+    const response = await fetch(`${FLASK_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    });
+
+    const data = await response.json();
+
+    if (data.status === "error") {
+      appendMessage("Error: " + data.message, "bot");
+    } else if (data.docs) {
+      // Combine top documents for bot reply
+      const reply = data.docs.join("\n\n");
+      appendMessage(reply, "bot");
+    }
+  } catch (err) {
+    console.error("Chat failed:", err);
+    appendMessage("Failed to get response from bot.", "bot");
+  }
 });
