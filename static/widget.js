@@ -13,42 +13,67 @@ document.addEventListener("DOMContentLoaded", () => {
   // Flask endpoint
   const FLASK_URL = "https://4c12c742f2aa.ngrok-free.app";
 
-  // Track last Q&A for feedback
-  let lastQuestion = "";
-  let lastAnswer = "";
-
   // Append message
-  function appendMessage(text, sender = "bot", withFeedback = false) {
+  function appendMessage(text, sender = "bot") {
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("chat-message", sender);
     msgDiv.textContent = text;
     chatBox.appendChild(msgDiv);
-
-    // Add thumbs feedback if requested
-    if (withFeedback) {
-      const fbDiv = document.createElement("div");
-      fbDiv.classList.add("feedback-buttons");
-
-      const upBtn = document.createElement("button");
-      upBtn.textContent = "👍";
-      upBtn.onclick = () => {
-        sendFeedback("up");
-        fbDiv.remove(); // hide after click
-      };
-
-      const downBtn = document.createElement("button");
-      downBtn.textContent = "👎";
-      downBtn.onclick = () => {
-        sendFeedback("down");
-        fbDiv.remove(); // hide after click
-      };
-
-      fbDiv.appendChild(upBtn);
-      fbDiv.appendChild(downBtn);
-      chatBox.appendChild(fbDiv);
-    }
-
     chatBox.scrollTop = chatBox.scrollHeight;
+    return msgDiv;
+  }
+
+  // Append bot reply with feedback buttons
+  function appendBotReply(data) {
+    const msgDiv = appendMessage(data.final_answer || "No answer.", "bot");
+
+    // Create feedback buttons
+    const fbDiv = document.createElement("div");
+    fbDiv.classList.add("feedback-buttons");
+
+    const upBtn = document.createElement("button");
+    upBtn.textContent = "👍";
+    upBtn.classList.add("thumb-up");
+
+    const downBtn = document.createElement("button");
+    downBtn.textContent = "👎";
+    downBtn.classList.add("thumb-down");
+
+    fbDiv.appendChild(upBtn);
+    fbDiv.appendChild(downBtn);
+    msgDiv.appendChild(fbDiv);
+
+    // Send feedback
+    upBtn.addEventListener("click", async () => {
+      await sendFeedback("good", data);
+      fbDiv.remove(); // remove after feedback
+    });
+
+    downBtn.addEventListener("click", async () => {
+      await sendFeedback("bad", data);
+      fbDiv.remove(); // remove after feedback
+    });
+  }
+
+  // Feedback API call
+  async function sendFeedback(sentiment, data) {
+    try {
+      await fetch(`${FLASK_URL}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sentiment,
+          question: data.user_question,
+          final_answer: data.final_answer,
+          rag_output: data.rag_output,
+          llm_output: data.llm_output,
+          rag_scores: data.rag_scores
+        })
+      });
+      console.log(`Feedback (${sentiment}) sent for:`, data.user_question);
+    } catch (err) {
+      console.error("Feedback failed:", err);
+    }
   }
 
   // Lead form
@@ -101,11 +126,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    lastQuestion = message;
-
     appendMessage(message, "user");
     msgInput.value = "";
-    appendMessage("Bot is thinking...", "bot");
+    const thinkingMsg = appendMessage("Bot is thinking...", "bot");
 
     try {
       const response = await fetch(`${FLASK_URL}/chat`, {
@@ -117,41 +140,27 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
 
-      const raw =
-        (typeof data.answer === "string" && data.answer) ||
-        (typeof data.final_answer === "string" && data.final_answer) ||
-        (typeof data.llm_output === "string" && data.llm_output) ||
-        "";
-
-      if (!raw) {
-        appendMessage("Bot did not return an answer.", "bot");
-        console.warn("Unexpected payload:", data);
-        return;
-      }
+      // Always remove thinking message
+      thinkingMsg.remove();
 
       if (data.status === "error") {
         appendMessage("Error: " + data.message, "bot");
         console.error("Bot error:", data.message);
       } else {
-        const formattedReply = raw
+        // Save the user question for feedback
+        data.user_question = message;
+
+        const formattedReply = (data.final_answer || "")
           .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
           .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
 
-        lastAnswer = formattedReply;
-
-        // Append with feedback buttons
-        appendMessage(formattedReply, "bot", true);
-        console.info("Bot reply:", formattedReply);
+        data.final_answer = formattedReply;
+        appendBotReply(data);
       }
     } catch (err) {
       console.error("Chat failed:", err);
+      thinkingMsg.remove();
       appendMessage("Failed to get response from bot.", "bot");
-    } finally {
-      // Always remove "thinking..." message if still there
-      const thinkingMsg = chatBox.querySelector(".chat-message.bot:last-child");
-      if (thinkingMsg && thinkingMsg.textContent === "Bot is thinking...") {
-        thinkingMsg.remove();
-      }
     }
   });
 
@@ -159,26 +168,4 @@ document.addEventListener("DOMContentLoaded", () => {
   msgInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendBtn.click();
   });
-
-  // Feedback sender
-  async function sendFeedback(vote) {
-    if (!lastQuestion || !lastAnswer) return;
-
-    try {
-      const res = await fetch(`${FLASK_URL}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question: lastQuestion,
-          answer: lastAnswer,
-          vote: vote
-        })
-      });
-
-      const data = await res.json();
-      console.log("Feedback saved:", data);
-    } catch (err) {
-      console.error("Feedback failed:", err);
-    }
-  }
 });
