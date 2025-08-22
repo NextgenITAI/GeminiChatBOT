@@ -13,12 +13,41 @@ document.addEventListener("DOMContentLoaded", () => {
   // Flask endpoint
   const FLASK_URL = "https://4c12c742f2aa.ngrok-free.app";
 
+  // Track last Q&A for feedback
+  let lastQuestion = "";
+  let lastAnswer = "";
+
   // Append message
-  function appendMessage(text, sender = "bot") {
+  function appendMessage(text, sender = "bot", withFeedback = false) {
     const msgDiv = document.createElement("div");
     msgDiv.classList.add("chat-message", sender);
     msgDiv.textContent = text;
     chatBox.appendChild(msgDiv);
+
+    // Add thumbs feedback if requested
+    if (withFeedback) {
+      const fbDiv = document.createElement("div");
+      fbDiv.classList.add("feedback-buttons");
+
+      const upBtn = document.createElement("button");
+      upBtn.textContent = "👍";
+      upBtn.onclick = () => {
+        sendFeedback("up");
+        fbDiv.remove(); // hide after click
+      };
+
+      const downBtn = document.createElement("button");
+      downBtn.textContent = "👎";
+      downBtn.onclick = () => {
+        sendFeedback("down");
+        fbDiv.remove(); // hide after click
+      };
+
+      fbDiv.appendChild(upBtn);
+      fbDiv.appendChild(downBtn);
+      chatBox.appendChild(fbDiv);
+    }
+
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
@@ -72,6 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    lastQuestion = message;
+
     appendMessage(message, "user");
     msgInput.value = "";
     appendMessage("Bot is thinking...", "bot");
@@ -85,33 +116,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
-      const raw =
-      (typeof data.answer === "string" && data.answer) ||
-      (typeof data.final_answer === "string" && data.final_answer) ||
-      (typeof data.llm_output === "string" && data.llm_output) ||
-      "";
 
-    if (!raw) {
-      // backend replied but didn’t include a usable answer
-      appendMessage("Bot did not return an answer.", "bot");
-      console.warn("Unexpected payload:", data);
-      return;
-    }
+      const raw =
+        (typeof data.answer === "string" && data.answer) ||
+        (typeof data.final_answer === "string" && data.final_answer) ||
+        (typeof data.llm_output === "string" && data.llm_output) ||
+        "";
+
+      if (!raw) {
+        appendMessage("Bot did not return an answer.", "bot");
+        console.warn("Unexpected payload:", data);
+        return;
+      }
+
       if (data.status === "error") {
         appendMessage("Error: " + data.message, "bot");
         console.error("Bot error:", data.message);
       } else {
         const formattedReply = raw
-      .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
-      .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
-        appendMessage(formattedReply, "bot");
+          .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
+          .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
+
+        lastAnswer = formattedReply;
+
+        // Append with feedback buttons
+        appendMessage(formattedReply, "bot", true);
         console.info("Bot reply:", formattedReply);
       }
     } catch (err) {
       console.error("Chat failed:", err);
       appendMessage("Failed to get response from bot.", "bot");
     } finally {
-      // Always remove thinking message
+      // Always remove "thinking..." message if still there
       const thinkingMsg = chatBox.querySelector(".chat-message.bot:last-child");
       if (thinkingMsg && thinkingMsg.textContent === "Bot is thinking...") {
         thinkingMsg.remove();
@@ -123,4 +159,26 @@ document.addEventListener("DOMContentLoaded", () => {
   msgInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") sendBtn.click();
   });
+
+  // Feedback sender
+  async function sendFeedback(vote) {
+    if (!lastQuestion || !lastAnswer) return;
+
+    try {
+      const res = await fetch(`${FLASK_URL}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: lastQuestion,
+          answer: lastAnswer,
+          vote: vote
+        })
+      });
+
+      const data = await res.json();
+      console.log("Feedback saved:", data);
+    } catch (err) {
+      console.error("Feedback failed:", err);
+    }
+  }
 });
