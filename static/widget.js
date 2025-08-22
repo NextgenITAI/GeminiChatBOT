@@ -85,14 +85,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
+      const raw =
+      (typeof data.answer === "string" && data.answer) ||
+      (typeof data.final_answer === "string" && data.final_answer) ||
+      (typeof data.llm_output === "string" && data.llm_output) ||
+      "";
 
+    if (!raw) {
+      // backend replied but didn’t include a usable answer
+      appendMessage("Bot did not return an answer.", "bot");
+      console.warn("Unexpected payload:", data);
+      return;
+    }
       if (data.status === "error") {
         appendMessage("Error: " + data.message, "bot");
         console.error("Bot error:", data.message);
       } else {
-        const formattedReply = data.answer
-          .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
-          .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
+        const formattedReply = raw
+      .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
+      .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
         appendMessage(formattedReply, "bot");
         console.info("Bot reply:", formattedReply);
       }
