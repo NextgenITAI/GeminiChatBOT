@@ -12,9 +12,9 @@ const msgInput = document.getElementById("msg");
 const sendBtn = document.getElementById("send");
 
 // -------------------------------
-// Local Flask endpoint
+// Public Flask endpoint (ngrok URL)
 // -------------------------------
-const FLASK_URL = "http://127.0.0.1:8000";
+const FLASK_URL = "https://4c12c742f2aa.ngrok-free.app"; // Use your ngrok URL
 
 // -------------------------------
 // Append message to chat
@@ -128,17 +128,12 @@ sendBtn.addEventListener("click", async () => {
     if (data.status === "error") {
       appendMessage("Error: " + data.message, "bot");
       console.error("Bot error:", data.message);
-    } else if (data.docs) {
-      const formattedReply = data.docs.map(d => {
-        return d
-          .replace(/Email:\s*(\S+)/i, "✉️ Email: $1")
-          .replace(/Mob(?:ile)?:\s*(\S+)/i, "📞 Mobile: $1");
-      }).join("\n\n");
+    } else {
+      const formattedReply = data.answer
+        .replace(/Email:\s*(\S+)/i, "✉️ Email: $1")
+        .replace(/Phone:\s*(\S+)/i, "📞 Phone: $1");
       appendMessage(formattedReply, "bot");
       console.info("Bot reply:", formattedReply);
-    } else {
-      appendMessage("Bot did not return any data.", "bot");
-      console.warn("No docs returned from bot for message:", message);
     }
   } catch (err) {
     console.error("Chat failed:", err);
