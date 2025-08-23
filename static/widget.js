@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendBtn = document.getElementById("send");
 
   // Flask endpoint
-  const FLASK_URL = "https://4c12c742f2aa.ngrok-free.app";
+  const FLASK_URL = "https://4c12c742f2aa.ngrok-free.app"; // change if needed
 
   // Append message
   function appendMessage(text, sender = "bot") {
@@ -20,63 +20,45 @@ document.addEventListener("DOMContentLoaded", () => {
     msgDiv.textContent = text;
     chatBox.appendChild(msgDiv);
     chatBox.scrollTop = chatBox.scrollHeight;
-    return msgDiv;
   }
 
-  // Append bot reply with feedback buttons
-  function appendBotReply(data) {
-    const msgDiv = appendMessage(data.final_answer || "No answer.", "bot");
+  // Append feedback buttons
+  function appendFeedbackButtons(answerText) {
+    const feedbackDiv = document.createElement("div");
+    feedbackDiv.classList.add("feedback-buttons");
 
-    // Create feedback buttons
-    const fbDiv = document.createElement("div");
-    fbDiv.classList.add("feedback-buttons");
+    const goodBtn = document.createElement("button");
+    goodBtn.textContent = "👍";
+    const badBtn = document.createElement("button");
+    badBtn.textContent = "👎";
 
-    const upBtn = document.createElement("button");
-    upBtn.textContent = "👍";
-    upBtn.classList.add("thumb-up");
+    feedbackDiv.appendChild(goodBtn);
+    feedbackDiv.appendChild(badBtn);
+    chatBox.appendChild(feedbackDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
 
-    const downBtn = document.createElement("button");
-    downBtn.textContent = "👎";
-    downBtn.classList.add("thumb-down");
-
-    fbDiv.appendChild(upBtn);
-    fbDiv.appendChild(downBtn);
-    msgDiv.appendChild(fbDiv);
-
-    // Send feedback
-    upBtn.addEventListener("click", async () => {
-      await sendFeedback("good", data);
-      fbDiv.remove(); // remove after feedback
-    });
-
-    downBtn.addEventListener("click", async () => {
-      await sendFeedback("bad", data);
-      fbDiv.remove(); // remove after feedback
-    });
-  }
-
-  // Feedback API call
-  async function sendFeedback(sentiment, data) {
-    try {
+    // Good feedback → send to backend
+    goodBtn.addEventListener("click", async () => {
       await fetch(`${FLASK_URL}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sentiment,
-          question: data.user_question,
-          final_answer: data.final_answer,
-          rag_output: data.rag_output,
-          llm_output: data.llm_output,
-          rag_scores: data.rag_scores
-        })
+        body: JSON.stringify({ feedback: "good", answer: answerText })
       });
-      console.log(`Feedback (${sentiment}) sent for:`, data.user_question);
-    } catch (err) {
-      console.error("Feedback failed:", err);
-    }
+      feedbackDiv.remove();
+    });
+
+    // Bad feedback → send to backend
+    badBtn.addEventListener("click", async () => {
+      await fetch(`${FLASK_URL}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: "bad", answer: answerText })
+      });
+      feedbackDiv.remove();
+    });
   }
 
-  // Lead form
+  // Lead form submit
   leadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -101,9 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = await response.json();
 
       if (result.status === "success") {
+        // Hide form, show thank you
         leadForm.classList.add("hidden");
         thankyouMsg.classList.remove("hidden");
 
+        // After 2 sec, hide thank you and show chat
         setTimeout(() => {
           thankyouMsg.classList.add("hidden");
           chatWindow.classList.remove("hidden");
@@ -128,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     appendMessage(message, "user");
     msgInput.value = "";
-    const thinkingMsg = appendMessage("Bot is thinking...", "bot");
+    appendMessage("Bot is thinking...", "bot");
 
     try {
       const response = await fetch(`${FLASK_URL}/chat`, {
@@ -140,26 +124,38 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
 
-      // Always remove thinking message
-      thinkingMsg.remove();
+      const raw =
+        (typeof data.answer === "string" && data.answer) ||
+        (typeof data.final_answer === "string" && data.final_answer) ||
+        (typeof data.llm_output === "string" && data.llm_output) ||
+        "";
+
+      // Remove "thinking..."
+      const thinkingMsg = chatBox.querySelector(".chat-message.bot:last-child");
+      if (thinkingMsg && thinkingMsg.textContent === "Bot is thinking...") {
+        thinkingMsg.remove();
+      }
+
+      if (!raw) {
+        appendMessage("Bot did not return an answer.", "bot");
+        console.warn("Unexpected payload:", data);
+        return;
+      }
 
       if (data.status === "error") {
         appendMessage("Error: " + data.message, "bot");
         console.error("Bot error:", data.message);
       } else {
-        // Save the user question for feedback
-        data.user_question = message;
-
-        const formattedReply = (data.final_answer || "")
+        const formattedReply = raw
           .replace(/Email:\s*(\S+)/gi, "✉️ Email: $1")
           .replace(/Phone:\s*(\S+)/gi, "📞 Phone: $1");
 
-        data.final_answer = formattedReply;
-        appendBotReply(data);
+        appendMessage(formattedReply, "bot");
+        appendFeedbackButtons(formattedReply); // add 👍👎 after each bot reply
+        console.info("Bot reply:", formattedReply);
       }
     } catch (err) {
       console.error("Chat failed:", err);
-      thinkingMsg.remove();
       appendMessage("Failed to get response from bot.", "bot");
     }
   });
