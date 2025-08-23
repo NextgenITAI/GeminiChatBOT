@@ -11,6 +11,8 @@
 <div id="chat-root">
   <div class="chat-container">
     <div class="header">Welcome to NextGenIT</div>
+
+    <!-- Lead Form -->
     <div class="form-container" id="lead-form">
       <form>
         <input type="text" id="name" placeholder="Your Name" required />
@@ -18,21 +20,25 @@
         <input type="tel" id="phone" placeholder="Phone" required />
         <button type="submit" id="submit-lead">Submit</button>
       </form>
-              <div id="thankyou-msg" class="hidden banner">
-                   Thank you for the details!
-                </div>
     </div>
+
+    <!-- Thank you message (outside form so it shows) -->
+    <div id="thankyou-msg" class="hidden banner">
+      Thank you for the details!
+    </div>
+
+    <!-- Chat Section -->
     <div class="chat-section hidden" id="chat-window">
       <div id="chat-box" class="chat-box"></div>
       <div class="chat-input">
         <input id="msg" placeholder="Ask me anything..." />
         <button id="send">Send</button>
       </div>
+      <div class="banner contact-banner">
+        Contact us at sales@nextgenit.in
+      </div>
     </div>
   </div>
-</div>
-<div class="banner contact-banner">
-         Contact us at sales@nextgenit.in
 </div>
 </body>
 </html>
