@@ -284,7 +284,11 @@
         appendMessage(message, "user");
         msgInput.value = "";
         const thinkingMsg = appendMessage("Bot is thinking...", "bot");
-
+         // === ADD THIS SECTION TO SET UP THE TIMEOUT ===
+        const controller = new AbortController();
+        const timeout = 600000; // Set a new timeout limit in milliseconds (e.g., 600 seconds)
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        // ===========================================
         try {
             const response = await fetch(`${FLASK_URL}/chat`, {
                 method: "POST",
